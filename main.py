@@ -4,7 +4,22 @@ import random
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtMultimedia import QSound, QMediaPlayer, QMediaContent
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+import math
+pi = math.atan(1)*4
+
+
+def sinr(x):
+    return math.sin(x/180*pi)
+
+
+def cosr(x):
+    return math.cos(x/180*pi)
+
+
+def atanr(x):
+    return math.atan(x)*180/pi
+
 
 actionNumber = 3  # 动作数量
 actionRotate = 1  # 旋转动作
@@ -12,7 +27,8 @@ actionRightFly = 2  # 向右飞行动作
 actionLeftFly = 3  # 向左飞行动作
 actionReturn = 4    # 变回娃娃
 flyTimerTime = 3000  # 飞行间隔时间
-actNumber = 9  # 动作数量
+flySpeed = 20  # 飞行速度
+actNumber = 11  # 动作数量
 
 
 class DesktopPet(QWidget):
@@ -28,6 +44,7 @@ class DesktopPet(QWidget):
         self.actSwitch = True  # 做动作开关
         self.flySwitch = True  # 飞行开关
         self.isFly = False  # 是否正在飞行
+        self.flyRegion = 1  # 飞行区域 1-四周 2-全屏
         # 声音类属性
         self.soundSwitch = True    # 声音开关
         self.soundMode = 3          # 声音播放模式:1.唠嗑模式 2.口号模式 3.随机模式
@@ -57,6 +74,7 @@ class DesktopPet(QWidget):
         self.h = 700
         self.xd = self.w  # 飞行目标位置
         self.yd = self.h
+        self.phi = 0  # 飞行方向角
         self.size = 200  # 缩放比例
         self.setGeometry(self.w, self.h, self.size, self.size)  # 设置窗口位置和大小
         self.action = 1  # 动作编号
@@ -90,6 +108,7 @@ class DesktopPet(QWidget):
         # self.setTop()   # 窗口置顶
         self.setWindowFlags(Qt.FramelessWindowHint |
                             Qt.WindowStaysOnTopHint | Qt.SubWindow)
+        self.isTop = True
         self.setAutoFillBackground(False)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.show()
@@ -140,6 +159,10 @@ class DesktopPet(QWidget):
     def flyReverse(self):
         self.flySwitch = not self.flySwitch
 
+    # 更改飞行区域
+    def switchFlyRegion(self, region):
+        self.flyRegion = region
+
     # 更改窗口大小
     def windowResize(self, size):
         self.setGeometry(self.w, self.h, 2*size, 2*size)
@@ -148,11 +171,15 @@ class DesktopPet(QWidget):
     # 触发飞行
     def startFly(self):
         if (self.flySwitch):
-            while self.xd-self.w < 100 and self.w-self.xd < 100:
-                self.xd = random.randint(100, 1700)
-            if (self.xd-self.w) % 10 == 0:  # 防止除以0
-                self.xd += 1
-            self.yd = random.randint(100, 900)
+            if self.flyRegion == 1:  # 0<x<300,1500<x<1800;0<y<150,750<y<900
+                while abs(self.w-self.xd) < 50 or (abs(self.w-self.xd) > 300 and abs(self.h-self.yd) > 150):
+                    self.xd = random.randint(0, 300)+1500*random.randint(0, 1)
+                    self.yd = random.randint(0, 150)+750*random.randint(0, 1)
+            elif self.flyRegion == 2:
+                while abs(self.w-self.xd) < 50:
+                    self.xd = random.randint(0, 1800)
+                self.yd = random.randint(100, 900)
+            self.phi = atanr((self.yd-self.h)/(self.xd-self.w))
             self.action = 2 if self.xd > self.w else 3
             self.flyTimer.stop()
 
@@ -173,14 +200,14 @@ class DesktopPet(QWidget):
                 self.frame = 1
             # action 2,3飞行位移
             if self.action == 2:
-                self.h += int((self.yd-self.h)*10/(self.xd-self.w))
-                self.w += 10
-                if self.w > self.xd:
+                self.h += int(flySpeed*sinr(self.phi)+1)
+                self.w += int(flySpeed*cosr(self.phi)+1)
+                if self.w >= self.xd:
                     self.stopFly()  # 飞行结束
             elif self.action == 3:
-                self.h -= int((self.yd-self.h)*10/(self.xd-self.w))
-                self.w -= 10
-                if self.w < self.xd:
+                self.h -= int(flySpeed*sinr(self.phi)+1)
+                self.w -= int(flySpeed*cosr(self.phi)+1)
+                if self.w <= self.xd:
                     self.stopFly()  # 飞行结束
         self.setGeometry(self.w, self.h, self.size, self.size)
         self.lbl.setPixmap(self.pm[self.action][self.frame].scaled(
@@ -208,9 +235,17 @@ class DesktopPet(QWidget):
             '随机模式', triggered=lambda: self.switchSoundMode(3), checkable=True)
         self.act[9] = QAction(
             '禁止飞行' if self.flySwitch else '允许飞行', triggered=self.flyReverse)
+        self.act[10] = QAction(
+            '四周飞行', triggered=lambda: self.switchFlyRegion(1), checkable=True)
+        self.act[11] = QAction(
+            '全屏飞行', triggered=lambda: self.switchFlyRegion(2), checkable=True)
         menu.addAction(self.act[1])
         menu.addAction(self.act[2])
         menu.addAction(self.act[9])
+        regionMenu = QMenu('飞行区域')
+        regionMenu.addAction(self.act[10])
+        regionMenu.addAction(self.act[11])
+        menu.addMenu(regionMenu)
         menu.addSeparator()
         displayMenu = QMenu('显示比例')
         displayMenu.addAction(self.act[3])
@@ -239,21 +274,25 @@ class DesktopPet(QWidget):
 
     # 菜单更新打勾
     def updateMenus(self):
-        for a in range(3, 9):
+        for a in range(3, 11):
             self.act[a].setChecked(False)
-        if (self.size == 200):
+        if (self.size == 200):  # 更新显示比例
             self.act[3].setChecked(True)
         elif (self.size == 150):
             self.act[4].setChecked(True)
         elif (self.size == 100):
             self.act[5].setChecked(True)
-        if self.soundMode == 1:
+        if self.soundMode == 1:  # 更新声音模式
             self.act[6].setChecked(True)
         elif self.soundMode == 2:
             self.act[7].setChecked(True)
         elif self.soundMode == 3:
             self.act[8].setChecked(True)
-        self.actTop.setChecked(True if self.isTop else False)
+        if self.flyRegion == 1:  # 更新飞行区域
+            self.act[10].setChecked(True)
+        elif self.flyRegion == 2:
+            self.act[11].setChecked(True)
+        self.actTop.setChecked(True if self.isTop else False)  # 更新置顶
 
     # 鼠标事件
     def mousePressEvent(self, event):
@@ -280,6 +319,8 @@ class DesktopPet(QWidget):
     def mouseReleaseEvent(self, event):
         self.is_follow_mouse = False
         self.setCursor(QCursor(Qt.ArrowCursor))
+        if not (self.w == self.xd):
+            self.phi = atanr((self.yd-self.h)/(self.xd-self.w))  # 更新飞行方向角
 
     # 托盘退出
     def quit(self):
