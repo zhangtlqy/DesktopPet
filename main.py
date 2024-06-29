@@ -25,7 +25,7 @@ actionNumber = 3  # 动作数量
 actionRotate = 1  # 旋转动作
 actionRightFly = 2  # 向右飞行动作
 actionLeftFly = 3  # 向左飞行动作
-actionReturn = 4    # 变回娃娃
+actionReturn = 4    # 变回娃娃  TODO:未实现
 flyTimerTime = 3000  # 飞行间隔时间
 flySpeed = 20  # 飞行速度
 actNumber = 11  # 动作数量
@@ -150,6 +150,9 @@ class DesktopPet(QWidget):
     # 更改声音开关
     def soundReverse(self):
         self.soundSwitch = not self.soundSwitch
+        if not self.soundSwitch:
+            self.player.stop()
+            self.isPlay = False
 
     # 切换声音模式
     def switchSoundMode(self, mode):
@@ -171,9 +174,9 @@ class DesktopPet(QWidget):
     # 触发飞行
     def startFly(self):
         if (self.flySwitch):
-            if self.flyRegion == 1:  # 0<x<300,1500<x<1800;0<y<150,750<y<900
-                while abs(self.w-self.xd) < 50 or (abs(self.w-self.xd) > 300 and abs(self.h-self.yd) > 150):
-                    self.xd = random.randint(0, 300)+1500*random.randint(0, 1)
+            if self.flyRegion == 1:  # 0<x<200,1600<x<1800;0<y<150,750<y<900 TODO:考虑窗口大小
+                while abs(self.w-self.xd) < 50 or (abs(self.w-self.xd) > 200 and abs(self.h-self.yd) > 150):
+                    self.xd = random.randint(0, 200)+1500*random.randint(0, 1)
                     self.yd = random.randint(0, 150)+750*random.randint(0, 1)
             elif self.flyRegion == 2:
                 while abs(self.w-self.xd) < 50:
