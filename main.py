@@ -25,8 +25,8 @@ actionNumber = 3  # 动作数量
 actionRotate = 1  # 旋转动作
 actionRightFly = 2  # 向右飞行动作
 actionLeftFly = 3  # 向左飞行动作
-actionReturn = 4    # 变回娃娃      #TODO:未实现
-flyTimerTime = 3000  # 飞行间隔时间
+actionReturn = 4    # 变回娃娃          #TODO:未实现
+flyTimerTime = 30000  # 飞行间隔时间
 flySpeed = 20  # 飞行速度
 actNumber = 11  # 动作数量
 
@@ -36,7 +36,6 @@ screen = screenApp.primaryScreen()  # 获取当前主屏幕对象
 screenSize = screen.size()  # 获取屏幕尺寸
 screenWidth = screenSize.width()  # 获取屏幕宽度 1920
 screenHeight = screenSize.height()  # 获取屏幕高度 1080
-print(screenWidth, screenHeight)
 
 
 class DesktopPet(QWidget):
@@ -239,11 +238,11 @@ class DesktopPet(QWidget):
         self.act[2] = QAction(
             '关闭声音' if self.soundSwitch else '打开声音', triggered=self.soundReverse)
         self.act[3] = QAction(
-            '100%', triggered=lambda: self.xindowResize(100), checkable=True)
+            '100%', triggered=lambda: self.windowResize(100), checkable=True)
         self.act[4] = QAction(
-            '75%', triggered=lambda: self.xindowResize(75), checkable=True)
+            '75%', triggered=lambda: self.windowResize(75), checkable=True)
         self.act[5] = QAction(
-            '50%', triggered=lambda: self.xindowResize(50), checkable=True)
+            '50%', triggered=lambda: self.windowResize(50), checkable=True)
         self.act[6] = QAction(
             '唠嗑模式', triggered=lambda: self.switchSoundMode(1), checkable=True)
         self.act[7] = QAction(
